@@ -13,9 +13,11 @@ You must have some requirements satisfied on your workstation to make this app w
 
 ## How to use
 Issue these commands on terminal:
-`git clone https://github.com/MurkaTheGood/LMSScreenshoter`
-`cd LMSScreenshoter`
-`python3.9 screenshoter.py`
+```
+git clone https://github.com/MurkaTheGood/LMSScreenshoter
+cd LMSScreenshoter
+python3.9 screenshoter.py
+```
 Further instructions will be printed in terminal
 
 ## Where are the screenshots?
