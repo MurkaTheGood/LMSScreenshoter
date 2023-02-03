@@ -36,9 +36,8 @@ def get_auth_data() -> Tuple[str, str]:
 
 		# save
 		with open(CRED_PATH, 'w') as f:
-			f.write(login)
-			f.write('\n')
-			f.write(password)
+			cred = '%s\n%s' % (login, password)
+			f.write(cred)
 
 		# return
 		return (login, password)
