@@ -72,11 +72,8 @@ def main():
 	# asking to paste the overview URL
 	driver.get(input('URL of answers overview: '))
 
-	# looking for questions
-	questions = driver.find_elements(By.CLASS_NAME, 'que')
-
 	# check if questions are on different pages
-	if len(questions) <= 1:
+	if driver.find_elements(By.CLASS_NAME, 'multipages'):
 		print('Making the LMS show all questions on one page...')
 		# show all questions on one page
 		one_page_link = \
@@ -88,33 +85,27 @@ def main():
 		# sleep
 		time.sleep(5)
 
-		# looking for questions, again
-		questions = driver.find_elements(By.CLASS_NAME, 'que')
-
-	# create the screenshots directory for many sessions
-	try:
-		os.mkdir('screenshots')
-	except:
-		pass
+	# looking for questions
+	questions = driver.find_elements(By.CLASS_NAME, 'que')
 
 	# create the directory for screenshots of current session
 	screenshots_path = 'screenshots/%s' % \
-		(datetime.now().strftime('%d.%m.%Y, %T'))
-	os.mkdir(screenshots_path)
+		datetime.now().strftime('%d.%m.%Y, %T')
+	os.makedirs(screenshots_path, exist_ok = True)
 
 	# screenshot everything
-	i = 1
-	for q_e in questions:
+	for q_e in enumerate(questions):
+		# question number
+		q_n = q_e[0] + 1
+
 		# log
 		print(
-			'Screenshoting question #%s to %s/%s.png' % (i, screenshots_path, i),
+			'Screenshoting question #%s to %s/%s.png' % \
+			(q_n, screenshots_path, q_n),
 			end='... ')
 
 		# try to save the screenshot
-		screenshot_element(q_e, '%s/%s.png' % (screenshots_path, i))
-
-		# increment
-		i += 1
+		screenshot_element(q_e[1], '%s/%s.png' % (screenshots_path, q_n))
 
 	# done, close the driver
 	driver.close()
