@@ -97,14 +97,39 @@ def main():
 		# question number
 		q_n = q_e[0] + 1
 
-		# log
-		print(
-			'Screenshoting question #%s to %s/%s.png' % \
-			(q_n, screenshots_path, q_n),
-			end='... ')
 
-		# try to save the screenshot
-		screenshot_element(q_e[1], '%s/%s.png' % (screenshots_path, q_n))
+		# question element
+		question_element = q_e[1]
+
+		# check if tabled answer
+		table_elements = question_element. \
+			find_elements(By.CSS_SELECTOR, 'table.answer')
+		# yes!
+		if table_elements:
+			# iterate through all rows
+			for tr in enumerate(table_elements[0].find_elements(By.TAG_NAME, 'tr')):
+				# screenshot name
+				sc_name = '%s_%s.png' % (q_n, tr[0])
+
+				# log
+				print(
+					'Screenshoting row of question #%s to %s' % \
+					(q_n, sc_name),
+					end='... ')
+
+				# try to save the screenshot
+				screenshot_element(tr[1], '%s/%s' % \
+					(screenshots_path, sc_name))
+		# no!
+		else:
+			# log
+			print(
+				'Screenshoting question #%s to %s.png' % \
+				(q_n, q_n),
+				end='... ')
+
+			# try to save the screenshot
+			screenshot_element(question_element, '%s/%s.png' % (screenshots_path, q_n))
 
 	# done, close the driver
 	driver.close()
