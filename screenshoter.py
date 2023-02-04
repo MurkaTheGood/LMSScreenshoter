@@ -45,7 +45,7 @@ def get_auth_data() -> Tuple[str, str]:
 
 def main():
 	# preparing JSON (in case we need it)
-	serialized = { }
+	serialized = {}
 	serialized['multichoice'] = []
 
 	# getting the credentials
