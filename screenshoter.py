@@ -6,8 +6,17 @@ from datetime import datetime
 import time
 import os
 import json
+import enum
 
 CRED_PATH = 'credentials.txt'
+
+class QuestionType(enum.Enum):
+	''' enum for question types.
+		More information in README.md
+	'''
+
+	unknown, multichoice, gapselect, shortanswer = \
+		range(4)
 
 def screenshot_element(el : WebElement, path : str) -> None:
 	''' screenshot the WebElement and save the .png to path '''
@@ -54,6 +63,17 @@ def get_auth_data() -> Tuple[str, str]:
 		# return
 		return (login, password)
 
+def get_question_type(question_elem : WebElement) -> QuestionType:
+	# getting the classes of question WebElement
+	classes = question_elem.get_attribute('class').split(' ')
+
+	if 'multichoice' in classes: return QuestionType.multichoice
+	if 'gapselect' in classes: return QuestionType.gapselect
+	if 'shortanswer' in classes: return QuestionType.shortanswer
+
+	# failed to determite the type of question
+	return QuestionType.unknown
+
 def main():
 	# preparing JSON (in case we need it)
 	serialized = {}
@@ -95,10 +115,7 @@ def main():
 			driver.find_element(By.CLASS_NAME, 'othernav').find_elements(By.TAG_NAME, 'a')[0]
 
 		# navigate to the wanteed page
-		driver.get(one_page_link.get_attribute('href'))
-
-		# sleep
-		time.sleep(5)
+		one_page_link.click()
 
 	# looking for questions
 	questions = driver.find_elements(By.CLASS_NAME, 'que')
@@ -108,30 +125,43 @@ def main():
 		datetime.now().strftime('%d.%m.%Y, %T')
 	os.makedirs(results_path, exist_ok = True)
 
-	# screenshot everything
-	for q_e in enumerate(questions):
+	# dump everything
+	for q_pair in enumerate(questions):
 		# question number
-		q_n = q_e[0] + 1
+		q_n = q_pair[0] + 1
 
 		# question element
-		question_element = q_e[1]
+		q_e = q_pair[1]
 
-		# multichoice? that's equal to test
-		if 'multichoice' in question_element.get_attribute('class').split(' '):
-			q_dict = { }
-			q_dict['title'] = \
+		# get the question type
+		q_type = get_question_type(q_e)
+
+		# multichoice?
+		if q_type == QuestionType.multichoice:
+			# create the dict for multichoice
+			multichoice_dict = { }
+			# set the title
+			multichoice_dict['title'] = \
 				remove_extra_whitespaces(
-					question_element.find_element(By.CSS_SELECTOR, 'div.qtext').text.strip())
-			q_dict['answers'] = []
-			for a in question_element.find_elements(By.CSS_SELECTOR, 'div.rightanswer'):
-				q_dict['answers'].append(
+					q_e.find_element(By.CSS_SELECTOR, 'div.qtext').text.strip())
+
+			# add correct answers
+			multichoice_dict['answers'] = []
+			for a in q_e.find_elements(By.CSS_SELECTOR, 'div.rightanswer'):
+				multichoice_dict['answers'].append(
 					remove_extra_whitespaces(a.text.replace('Правильный ответ:', '').strip()))
-				
-			serialized['multichoice'].append(q_dict)
+			
+			# add serialized multichoice to list
+			serialized['multichoice'].append(multichoice_dict)
+
+		# ************************
+		# save the screenshot now
+		# ************************
 
 		# check if tabled answer
-		table_elements = question_element. \
+		table_elements = q_e. \
 			find_elements(By.CSS_SELECTOR, 'table.answer')
+
 		# yes!
 		if table_elements:
 			# iterate through all rows
@@ -157,7 +187,7 @@ def main():
 				end='... ')
 
 			# try to save the screenshot
-			screenshot_element(question_element, '%s/%s.png' % (results_path, q_n))
+			screenshot_element(q_e, '%s/%s.png' % (results_path, q_n))
 
 	# done, close the driver
 	driver.close()
