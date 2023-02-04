@@ -21,6 +21,17 @@ def screenshot_element(el : WebElement, path : str) -> None:
 		# :-(
 		print('FAIL')
 
+def remove_extra_whitespaces(original : str) -> str:
+	''' this function removes extra whitespaces inside string '''
+	# replace newlines with spaces
+	original = original.replace('\n', ' ')
+
+	# remove dublicated spaces
+	while original.find(' ' * 2) != -1:
+		original = original.replace(' ' * 2, ' ')
+
+	return original
+
 def get_auth_data() -> Tuple[str, str]:
 	''' returns the saved auth data for the LMS user.
 		will ask for credentials interactively and save them if they aren't present
@@ -109,10 +120,12 @@ def main():
 		if 'multichoice' in question_element.get_attribute('class').split(' '):
 			q_dict = { }
 			q_dict['title'] = \
-				question_element.find_element(By.CSS_SELECTOR, 'div.qtext').text.strip()
+				remove_extra_whitespaces(
+					question_element.find_element(By.CSS_SELECTOR, 'div.qtext').text.strip())
 			q_dict['answers'] = []
 			for a in question_element.find_elements(By.CSS_SELECTOR, 'div.rightanswer'):
-				q_dict['answers'].append(a.text.replace('Правильный ответ:', '').strip())
+				q_dict['answers'].append(
+					remove_extra_whitespaces(a.text.replace('Правильный ответ:', '').strip()))
 				
 			serialized['multichoice'].append(q_dict)
 
