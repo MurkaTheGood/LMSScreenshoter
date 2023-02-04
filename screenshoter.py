@@ -5,6 +5,7 @@ from typing import Tuple
 from datetime import datetime
 import time
 import os
+import json
 
 CRED_PATH = 'credentials.txt'
 
@@ -43,6 +44,10 @@ def get_auth_data() -> Tuple[str, str]:
 		return (login, password)
 
 def main():
+	# preparing JSON (in case we need it)
+	serialized = { }
+	serialized['multichoice'] = []
+
 	# getting the credentials
 	login, password = get_auth_data()
 
@@ -63,9 +68,9 @@ def main():
 
 	# type the credentials
 	driver.find_element(By.ID, 'username').send_keys(login)
-	time.sleep(1)
+	time.sleep(0.1)
 	driver.find_element(By.ID, 'password').send_keys(password)
-	time.sleep(1)
+	time.sleep(0.1)
 	driver.find_element(By.ID, 'loginbtn').click()
 
 	# asking to paste the overview URL
@@ -88,18 +93,28 @@ def main():
 	questions = driver.find_elements(By.CLASS_NAME, 'que')
 
 	# create the directory for screenshots of current session
-	screenshots_path = 'screenshots/%s' % \
+	results_path = 'results/%s' % \
 		datetime.now().strftime('%d.%m.%Y, %T')
-	os.makedirs(screenshots_path, exist_ok = True)
+	os.makedirs(results_path, exist_ok = True)
 
 	# screenshot everything
 	for q_e in enumerate(questions):
 		# question number
 		q_n = q_e[0] + 1
 
-
 		# question element
 		question_element = q_e[1]
+
+		# multichoice? that's equal to test
+		if 'multichoice' in question_element.get_attribute('class').split(' '):
+			q_dict = { }
+			q_dict['title'] = \
+				question_element.find_element(By.CSS_SELECTOR, 'div.qtext').text.strip()
+			q_dict['answers'] = []
+			for a in question_element.find_elements(By.CSS_SELECTOR, 'div.rightanswer'):
+				q_dict['answers'].append(a.text.replace('Правильный ответ:', '').strip())
+				
+			serialized['multichoice'].append(q_dict)
 
 		# check if tabled answer
 		table_elements = question_element. \
@@ -119,7 +134,7 @@ def main():
 
 				# try to save the screenshot
 				screenshot_element(tr[1], '%s/%s' % \
-					(screenshots_path, sc_name))
+					(results_path, sc_name))
 		# no!
 		else:
 			# log
@@ -129,10 +144,16 @@ def main():
 				end='... ')
 
 			# try to save the screenshot
-			screenshot_element(question_element, '%s/%s.png' % (screenshots_path, q_n))
+			screenshot_element(question_element, '%s/%s.png' % (results_path, q_n))
 
 	# done, close the driver
 	driver.close()
+
+	# write json
+	with open('%s/serialized.json' % results_path, 'w') as f:
+		f.write(json.dumps(serialized, indent = 2, ensure_ascii = False))
+		print('Saved serialized data to %s/serialized.json' % results_path)
+
 
 
 # entry point
